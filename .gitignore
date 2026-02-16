@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Node/web tooling
+node_modules/
+dist/
+build/
+.parcel-cache/
+.cache/
+
+# IDE/editor
+.vscode/
+.idea/
+.vs/
+
+# OS / logs
+Thumbs.db
+*.log
+
+# Generated assets
+web/assets/
+images/generated/
