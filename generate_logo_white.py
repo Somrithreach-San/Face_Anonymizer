@@ -1,10 +1,11 @@
 import os
+from pathlib import Path
 import cv2
 
 def main():
-    base = r"d:\Python Projcts\lang_engly\web"
-    src = os.path.join(base, "logo.png")
-    out = os.path.join(base, "logo-white.png")
+    base = Path(__file__).parent / "web"
+    src = str(base / "logo.png")
+    out = str(base / "logo-white.png")
     img = cv2.imread(src, cv2.IMREAD_UNCHANGED)
     if img is None:
         raise SystemExit(f"Source not found or unreadable: {src}")

@@ -554,10 +554,15 @@ def _apply_anonymization(img: np.ndarray, rects: List[Tuple[int, int, int, int]]
     """
     method = _normalize_method(method)
     intensity = max(5, min(100, int(intensity)))
-    # avoid blur_divisor < 1 which creates overly large kernels; clamp to 1.0 min
     blur_divisor = max(1.0, 10.0 - (intensity / 100.0) * 8.0)
-    # pixel_scale used for resize-based pixelation
-    pixel_scale = max(1, 2 + int((intensity / 100.0) * 18))
+    img_h, img_w = img.shape[:2]
+    base_pixel_scale = max(2, 2 + int((intensity / 100.0) * 18))
+    ref_w = 1024.0
+    try:
+        scale_factor = max(1.0, min(4.0, float(img_w) / ref_w))
+    except Exception:
+        scale_factor = 1.0
+    pixel_scale = max(2, int(round(base_pixel_scale * scale_factor)))
 
     def _elliptical_alpha(h: int, w: int, inset_pct: float = 0.08, feather_frac: float = 0.25) -> np.ndarray:
         """
@@ -914,9 +919,69 @@ def process_video(
                     pass
         cap.release()
         writer.release()
-        # Validate that the written file is readable by OpenCV; if not, signal failure
+        final_p = out_p
         try:
-            cap2 = cv2.VideoCapture(str(out_p))
+            ffmpeg = shutil.which("ffmpeg")
+        except Exception:
+            ffmpeg = None
+        if ffmpeg and input_path:
+            suf = out_p.suffix.lower()
+            try:
+                if suf in (".mp4", ".mov", ".m4v"):
+                    merged = out_p.with_name(out_p.stem + "_audio" + out_p.suffix)
+                    cmd = [
+                        ffmpeg,
+                        "-y",
+                        "-i",
+                        str(out_p),
+                        "-i",
+                        str(input_path),
+                        "-c:v",
+                        "copy",
+                        "-c:a",
+                        "aac",
+                        "-b:a",
+                        "128k",
+                        "-map",
+                        "0:v:0",
+                        "-map",
+                        "1:a:0?",
+                        "-shortest",
+                        str(merged),
+                    ]
+                elif suf == ".webm":
+                    merged = out_p.with_name(out_p.stem + "_audio.webm")
+                    cmd = [
+                        ffmpeg,
+                        "-y",
+                        "-i",
+                        str(out_p),
+                        "-i",
+                        str(input_path),
+                        "-c:v",
+                        "copy",
+                        "-c:a",
+                        "libopus",
+                        "-b:a",
+                        "128k",
+                        "-map",
+                        "0:v:0",
+                        "-map",
+                        "1:a:0?",
+                        "-shortest",
+                        str(merged),
+                    ]
+                else:
+                    cmd = None
+                    merged = None
+                if cmd is not None and merged is not None:
+                    r = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    if r.returncode == 0 and merged.exists():
+                        final_p = merged
+            except Exception:
+                pass
+        try:
+            cap2 = cv2.VideoCapture(str(final_p))
             ok, _ = cap2.read()
             cap2.release()
             if not ok:
@@ -933,7 +998,7 @@ def process_video(
             parts.append(f"cascades:{cascade_frames} ({int(round(100.0 * cascade_frames / processed_frames))}%)")
         if parts:
             logger.info("Detectors used - " + ", ".join(parts))
-        return str(out_p), total_faces
+        return str(final_p), total_faces
     except KeyboardInterrupt:
         raise
     except Exception:
