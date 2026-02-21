@@ -300,7 +300,18 @@ def anonymize_video():
             return jsonify({"error": "processing failed"}), 500
         if total_faces == 0:
             return jsonify({"error": "no faces found"}), 400
-        return send_file(output_path, mimetype="video/mp4", download_name="anonymized.mp4")
+        out_ext = os.path.splitext(output_path)[1].lower()
+        mime, _ = mimetypes.guess_type(output_path)
+        if out_ext == ".webm":
+            mime = "video/webm"
+        elif out_ext in (".mp4", ".mov", ".m4v"):
+            mime = "video/mp4"
+        elif out_ext == ".avi":
+            mime = "video/x-msvideo"
+        else:
+            mime = mime or "application/octet-stream"
+        download_name = f"anonymized{out_ext or '.mp4'}"
+        return send_file(output_path, mimetype=mime, download_name=download_name)
     finally:
         try:
             os.remove(tmp_in_path)
@@ -368,7 +379,18 @@ def job_download():
     p = j.get("path")
     if not p or not os.path.exists(p):
         return jsonify({"error": "not ready"}), 400
-    return send_file(p, mimetype="video/mp4", download_name="anonymized.mp4")
+    out_ext = os.path.splitext(p)[1].lower()
+    mime, _ = mimetypes.guess_type(p)
+    if out_ext == ".webm":
+        mime = "video/webm"
+    elif out_ext in (".mp4", ".mov", ".m4v"):
+        mime = "video/mp4"
+    elif out_ext == ".avi":
+        mime = "video/x-msvideo"
+    else:
+        mime = mime or "application/octet-stream"
+    download_name = f"anonymized{out_ext or '.mp4'}"
+    return send_file(p, mimetype=mime, download_name=download_name)
 
 JOBS = {}
 @app.post("/api/validate_video")

@@ -2,22 +2,35 @@
 
 Privacy-first image and video anonymization using OpenCV and a simple Flask web UI.
 
-## Quick Start (Windows)
+## Quick Start
 
-1. Install Python 3 (if you don’t have it yet).
-2. Install ffmpeg and make sure `ffmpeg` is on your PATH (needed for video audio).
-3. In this folder, create and activate a virtual environment and install deps:
+1. Install Python 3.
+2. Install ffmpeg and ensure `ffmpeg` is on your PATH (for video audio).
+3. Create a virtual environment and install dependencies:
 
-```bash
-py -m venv .venv
-.\.venv\Scripts\pip.exe install -r requirements.txt
-```
+   - Windows (PowerShell):
+     ```powershell
+     py -m venv .venv
+     .\.venv\Scripts\Activate.ps1
+     pip install -r requirements.txt
+     ```
+   - macOS / Linux:
+     ```bash
+     python3 -m venv .venv
+     source .venv/bin/activate
+     pip install -r requirements.txt
+     ```
 
 4. Run the web app:
 
-```bash
-.\.venv\Scripts\python.exe web_app.py
-```
+   - Windows:
+     ```powershell
+     python web_app.py
+     ```
+   - macOS / Linux:
+     ```bash
+     python3 web_app.py
+     ```
 
 5. Open http://127.0.0.1:5000/ and:
    - Upload an image or video
@@ -29,6 +42,7 @@ py -m venv .venv
 - All processing happens locally; nothing is uploaded to external servers.
 - Large or unsupported video codecs may fail with a clear error toast.
 - If ffmpeg is missing or not on PATH, video anonymization will still work but the output video will not contain audio.
+- The web UI uses Tailwind via CDN — no Node or build step is required.
 
 ## Requirements
 - Python 3.x
@@ -36,3 +50,11 @@ py -m venv .venv
 - NumPy
 - Flask
 - ffmpeg (for preserving audio in anonymized videos)
+
+## CLI (optional)
+You can also process videos via the CLI:
+```bash
+python anonymizer.py process input.mp4 output.mp4 --method blur --intensity 30
+# Quick scan without producing a video:
+python anonymizer.py probe input.mp4 --max-frames 120
+```
